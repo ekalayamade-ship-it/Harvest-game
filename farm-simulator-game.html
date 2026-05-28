@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farm Life Simulator - Harvest Moon Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .game-container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .game-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 15px;
+            padding: 15px;
+            background: #34495e;
+            border-radius: 0 0 10px 10px;
+        }
+
+        /* Canvas */
+        canvas {
+            border: 3px solid #27ae60;
+            background: #87ceeb;
+            border-radius: 8px;
+            display: block;
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #2c3e50;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: 600px;
+            border: 2px solid #34495e;
+        }
+
+        .sidebar h3 {
+            color: #2ecc71;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #27ae60;
+            padding-bottom: 10px;
+        }
+
+        .stat-item {
+            background: #1a252f;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #2ecc71;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2ecc71;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #1a252f;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #f39c12;
+            font-size: 1em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .game-button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .game-button:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .game-button:active {
+            transform: translateY(0);
+        }
+
+        .game-button.disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .game-button.selected {
+            background: #f39c12;
+            border: 2px solid #e67e22;
+        }
+
+        .inventory-slot {
+            background: #1a252f;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 2px solid #3498db;
+            color: white;
+            font-size: 0.85em;
+        }
+
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .inventory-name {
+            flex: 1;
+            color: #ecf0f1;
+        }
+
+        .inventory-count {
+            background: #27ae60;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .day-cycle {
+            background: #1a252f;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+            border: 1px solid #27ae60;
+        }
+
+        .day-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2ecc71;
+            margin-bottom: 5px;
+        }
+
+        .season {
+            color: #f39c12;
+            font-size: 0.9em;
+        }
+
+        .time-display {
+            color: #3498db;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .message-box {
+            background: #16a085;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            min-height: 40px;
+            border-left: 3px solid #1abc9c;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .controls {
+            background: #1a252f;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #34495e;
+        }
+
+        .controls-title {
+            color: #ecf0f1;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .control-item {
+            color: #bdc3c7;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .key {
+            background: #34495e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #2ecc71;
+        }
+
+        @media (max-width: 900px) {
+            .game-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: 300px;
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .tooltip {
+            font-size: 0.8em;
+            color: #95a5a6;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .currency {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+
+        .quality-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .quality-normal {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .quality-silver {
+            background: #34495e;
+            color: #ecf0f1;
+        }
+
+        .quality-gold {
+            background: #f39c12;
+            color: white;
+        }
+
+        .shop-item {
+            background: #1a252f;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 2px solid #e74c3c;
+            color: white;
+            font-size: 0.85em;
+        }
+
+        .shop-item-name {
+            color: #ecf0f1;
+            margin-bottom: 5px;
+        }
+
+        .shop-item-price {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+
+        .shop-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-top: 5px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .shop-button:hover {
+            background: #c0392b;
+        }
+
+        .shop-button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🌾 Farm Life Simulator 🌾</h1>
+            <p>Manage your farm, plant crops, raise animals, and build your dream homestead!</p>
+        </div>
+
+        <div class="game-wrapper">
+            <div>
+                <canvas id="gameCanvas" width="600" height="500"></canvas>
+            </div>
+
+            <div class="sidebar">
+                <!-- Day & Season Info -->
+                <div class="day-cycle">
+                    <div class="day-number">Day <span id="dayNumber">1</span></div>
+                    <div class="season" id="seasonDisplay">Spring</div>
+                    <div class="time-display" id="timeDisplay">6:00 AM</div>
+                </div>
+
+                <!-- Messages -->
+                <div class="message-box" id="messageBox">
+                    Welcome to Farm Life! Plant seeds to grow crops.
+                </div>
+
+                <!-- Controls -->
+                <div class="controls">
+                    <div class="controls-title">⌨️ Controls</div>
+                    <div class="control-item">
+                        <span>Move</span>
+                        <span class="key">Arrow Keys</span>
+                    </div>
+                    <div class="control-item">
+                        <span>Action</span>
+                        <span class="key">Space</span>
+                    </div>
+                    <div class="control-item">
+                        <span>Next Day</span>
+                        <span class="key">D</span>
+                    </div>
+                    <div class="control-item">
+                        <span>Sleep</span>
+                        <span class="key">S</span>
+                    </div>
+                </div>
+
+                <!-- Stats Section -->
+                <h3>📊 Stats</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">💰 Gold</div>
+                        <div class="stat-value" id="goldDisplay">500</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">❤️ Energy</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="energyBar" style="width: 100%"></div>
+                        </div>
+                        <div class="stat-value" id="energyDisplay">100/100</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">😊 Happiness</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="happinessBar" style="width: 100%; background: linear-gradient(90deg, #e74c3c 0%, #f39c12 100%);"></div>
+                        </div>
+                        <div class="stat-value" id="happinessDisplay">100/100</div>
+                    </div>
+                </div>
+
+                <!-- Tools Section -->
+                <h3>🔧 Tools</h3>
+                <div class="button-group">
+                    <button class="game-button selected" id="toolWatering" onclick="selectTool('watering')">💧 Watering Can</button>
+                    <button class="game-button" id="toolPickaxe" onclick="selectTool('pickaxe')">⚒️ Pickaxe</button>
+                    <button class="game-button" id="toolAxe" onclick="selectTool('axe')">🪓 Axe</button>
+                    <button class="game-button" id="toolHoe" onclick="selectTool('hoe')">🌾 Hoe</button>
+                </div>
+
+                <!-- Actions Section -->
+                <h3>⚡ Actions</h3>
+                <div class="button-group">
+                    <button class="game-button" onclick="sleep()">😴 Sleep (S)</button>
+                    <button class="game-button" onclick="eat()">🍎 Eat</button>
+                    <button class="game-button" onclick="openShop()">🏪 Shop</button>
+                    <button class="game-button" onclick="saveGame()">💾 Save</button>
+                </div>
+
+                <!-- Inventory Section -->
+                <h3>🎒 Inventory</h3>
+                <div id="inventoryDisplay"></div>
+
+                <!-- Crops Info -->
+                <h3>🌱 Growing Crops</h3>
+                <div id="cropsDisplay"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game Constants
+        const TILE_SIZE = 40;
+        const GRID_WIDTH = 15;
+        const GRID_HEIGHT = 12;
+
+        // Crop Types
+        const CROPS = {
+            wheat: { name: 'Wheat', growth: 5, value: 50, sprite: '🌾', color: '#f1c40f' },
+            tomato: { name: 'Tomato', growth: 7, value: 80, sprite: '🍅', color: '#e74c3c' },
+            carrot: { name: 'Carrot', growth: 6, value: 70, sprite: '🥕', color: '#e67e22' },
+            corn: { name: 'Corn', growth: 8, value: 100, sprite: '🌽', color: '#f4d03f' },
+            lettuce: { name: 'Lettuce', growth: 4, value: 40, sprite: '🥬', color: '#27ae60' }
+        };
+
+        // Game State
+        const gameState = {
+            player: { x: 7, y: 9, energy: 100, happiness: 100 },
+            gold: 500,
+            day: 1,
+            season: 'Spring',
+            time: 6,
+            selectedTool: 'watering',
+            tiles: [],
+            inventory: {
+                seeds_wheat: 10,
+                seeds_tomato: 5,
+                seeds_carrot: 5,
+                seeds_corn: 3,
+                seeds_lettuce: 8
+            },
+            harvested: {}
+        };
+
+        // Initialize Tiles
+        function initTiles() {
+            gameState.tiles = [];
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    gameState.tiles.push({
+                        x: x,
+                        y: y,
+                        type: 'grass', // grass, tilled, water
+                        crop: null,
+                        growth: 0,
+                        watered: false
+                    });
+                }
+            }
+        }
+
+        // Get Tile at Position
+        function getTileAt(x, y) {
+            return gameState.tiles.find(t => t.x === x && t.y === y);
+        }
+
+        // Draw Game
+        function draw() {
+            // Clear Canvas
+            ctx.fillStyle = '#87ceeb';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Grid & Tiles
+            for (let tile of gameState.tiles) {
+                const px = tile.x * TILE_SIZE;
+                const py = tile.y * TILE_SIZE;
+
+                // Tile Background
+                ctx.fillStyle = tile.type === 'grass' ? '#7cb342' : '#8d6e63';
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+
+                // Tile Border
+                ctx.strokeStyle = '#558b2f';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+
+                // Watered Indicator
+                if (tile.watered) {
+                    ctx.fillStyle = 'rgba(52, 152, 219, 0.3)';
+                    ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                }
+
+                // Draw Crop
+                if (tile.crop) {
+                    const cropData = CROPS[tile.crop];
+                    const progress = tile.growth / cropData.growth;
+                    
+                    ctx.fillStyle = cropData.color;
+                    ctx.font = `${Math.floor(20 + progress * 15)}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(cropData.sprite, px + TILE_SIZE / 2, py + TILE_SIZE / 2);
+
+                    // Growth Bar
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.fillRect(px + 2, py + TILE_SIZE - 5, TILE_SIZE - 4, 4);
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.fillRect(px + 2, py + TILE_SIZE - 5, (TILE_SIZE - 4) * progress, 4);
+                }
+            }
+
+            // Draw Player
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧑', gameState.player.x * TILE_SIZE + TILE_SIZE / 2, gameState.player.y * TILE_SIZE + TILE_SIZE / 2);
+
+            // Draw UI
+            updateUI();
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('dayNumber').textContent = gameState.day;
+            document.getElementById('seasonDisplay').textContent = gameState.season;
+            document.getElementById('timeDisplay').textContent = `${gameState.time}:00 ${gameState.time < 12 ? 'AM' : 'PM'}`;
+            document.getElementById('goldDisplay').textContent = gameState.gold;
+            document.getElementById('energyDisplay').textContent = `${gameState.player.energy}/100`;
+            document.getElementById('happinessDisplay').textContent = `${gameState.player.happiness}/100`;
+            document.getElementById('energyBar').style.width = (gameState.player.energy) + '%';
+            document.getElementById('happinessBar').style.width = (gameState.player.happiness) + '%';
+
+            // Update Inventory
+            const invDisplay = document.getElementById('inventoryDisplay');
+            invDisplay.innerHTML = '';
+            for (let [item, count] of Object.entries(gameState.inventory)) {
+                if (count > 0) {
+                    const cropType = item.replace('seeds_', '');
+                    const cropData = CROPS[cropType];
+                    invDisplay.innerHTML += `
+                        <div class="inventory-slot">
+                            <div class="inventory-item">
+                                <span class="inventory-name">${cropData.sprite} ${cropData.name} Seeds</span>
+                                <span class="inventory-count">${count}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Update Growing Crops
+            const cropsDisplay = document.getElementById('cropsDisplay');
+            let croppingCrops = gameState.tiles.filter(t => t.crop);
+            cropsDisplay.innerHTML = '';
+            croppingCrops.forEach(tile => {
+                const cropData = CROPS[tile.crop];
+                const daysLeft = Math.ceil(cropData.growth - tile.growth);
+                cropsDisplay.innerHTML += `
+                    <div class="inventory-slot">
+                        <div class="inventory-item">
+                            <span class="inventory-name">${cropData.sprite} ${cropData.name}</span>
+                            <span class="inventory-count">${daysLeft}d</span>
+                        </div>
+                        <div class="progress-bar" style="margin-top: 5px; margin-bottom: 0;">
+                            <div class="progress-fill" style="width: ${(tile.growth / cropData.growth) * 100}%; background: #2ecc71;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Movement
+        document.addEventListener('keydown', (e) => {
+            const speed = 1;
+            switch(e.key.toLowerCase()) {
+                case 'arrowup':
+                case 'w':
+                    gameState.player.y = Math.max(0, gameState.player.y - speed);
+                    gameState.player.energy -= 0.5;
+                    draw();
+                    break;
+                case 'arrowdown':
+                case 's':
+                    if (e.key.toLowerCase() === 's') sleep();
+                    else {
+                        gameState.player.y = Math.min(GRID_HEIGHT - 1, gameState.player.y + speed);
+                        gameState.player.energy -= 0.5;
+                        draw();
+                    }
+                    break;
+                case 'arrowleft':
+                case 'a':
+                    gameState.player.x = Math.max(0, gameState.player.x - speed);
+                    gameState.player.energy -= 0.5;
+                    draw();
+                    break;
+                case 'arrowright':
+                case 'd':
+                    if (e.key.toLowerCase() === 'd') nextDay();
+                    else {
+                        gameState.player.x = Math.min(GRID_WIDTH - 1, gameState.player.x + speed);
+                        gameState.player.energy -= 0.5;
+                        draw();
+                    }
+                    break;
+                case ' ':
+                    action();
+                    break;
+            }
+            gameState.player.energy = Math.max(0, gameState.player.energy);
+        });
+
+        // Action
+        function action() {
+            const tile = getTileAt(gameState.player.x, gameState.player.y);
+            
+            switch(gameState.selectedTool) {
+                case 'watering':
+                    if (tile.crop && !tile.watered) {
+                        tile.watered = true;
+                        gameState.player.energy -= 3;
+                        gameState.player.happiness += 5;
+                        showMessage('Crops watered!');
+                    }
+                    break;
+                case 'hoe':
+                    if (tile.type === 'grass' && !tile.crop) {
+                        tile.type = 'tilled';
+                        gameState.player.energy -= 5;
+                        showMessage('Soil tilled!');
+                        plantCrop();
+                    }
+                    break;
+                case 'pickaxe':
+                    // Mine rocks (future feature)
+                    showMessage('No rocks here to mine.');
+                    break;
+                case 'axe':
+                    // Chop wood (future feature)
+                    showMessage('No trees here to chop.');
+                    break;
+            }
+            gameState.player.energy = Math.max(0, gameState.player.energy);
+            draw();
+        }
+
+        // Plant Crop
+        function plantCrop() {
+            const tile = getTileAt(gameState.player.x, gameState.player.y);
+            if (tile.type === 'tilled' && !tile.crop) {
+                // Find first available seed
+                for (let [seed, count] of Object.entries(gameState.inventory)) {
+                    if (seed.startsWith('seeds_') && count > 0) {
+                        const cropType = seed.replace('seeds_', '');
+                        tile.crop = cropType;
+                        tile.growth = 0;
+                        gameState.inventory[seed]--;
+                        gameState.player.energy -= 2;
+                        showMessage(`Planted ${CROPS[cropType].name}!`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Select Tool
+        function selectTool(tool) {
+            gameState.selectedTool = tool;
+            document.querySelectorAll('.game-button').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1)).classList.add('selected');
+            showMessage(`Selected ${tool} tool.`);
+        }
+
+        // Sleep
+        function sleep() {
+            nextDay();
+        }
+
+        // Next Day
+        function nextDay() {
+            gameState.day++;
+            gameState.time = 6;
+            gameState.player.energy = 100;
+            gameState.player.happiness = Math.max(0, gameState.player.happiness - 10);
+
+            // Update season
+            const seasons = ['Spring', 'Summer', 'Fall', 'Winter'];
+            const seasonIndex = Math.floor((gameState.day - 1) / 30) % 4;
+            gameState.season = seasons[seasonIndex];
+
+            // Grow crops
+            gameState.tiles.forEach(tile => {
+                if (tile.crop) {
+                    tile.growth++;
+                    
+                    // Random growth boost if watered
+                    if (tile.watered && Math.random() > 0.5) {
+                        tile.growth += 0.5;
+                    }
+                    
+                    // Check if mature
+                    if (tile.growth >= CROPS[tile.crop].growth) {
+                        showMessage(`${CROPS[tile.crop].name} is ready to harvest!`);
+                    }
+                }
+                tile.watered = false;
+            });
+
+            draw();
+        }
+
+        // Eat
+        function eat() {
+            if (gameState.gold >= 10) {
+                gameState.gold -= 10;
+                gameState.player.energy = Math.min(100, gameState.player.energy + 30);
+                showMessage('Ate a meal! Energy restored.');
+            } else {
+                showMessage('Not enough gold to eat!');
+            }
+            draw();
+        }
+
+        // Open Shop
+        function openShop() {
+            const seedPrices = {
+                wheat: 20,
+                tomato: 40,
+                carrot: 35,
+                corn: 50,
+                lettuce: 25
+            };
+
+            let shopHTML = '<div style="margin-top: 15px;">';
+            for (let [crop, price] of Object.entries(seedPrices)) {
+                shopHTML += `
+                    <div class="shop-item">
+                        <div class="shop-item-name">${CROPS[crop].sprite} ${CROPS[crop].name} Seeds</div>
+                        <div class="shop-item-price">Price: <span class="currency">${price}g</span></div>
+                        <button class="shop-button" onclick="buySeed('${crop}', ${price})">Buy</button>
+                    </div>
+                `;
+            }
+            shopHTML += '</div>';
+            
+            const shopDiv = document.createElement('div');
+            shopDiv.innerHTML = shopHTML;
+            
+            const sidebar = document.querySelector('.sidebar');
+            const oldShop = sidebar.querySelector('[style*="margin-top: 15px"]');
+            if (oldShop) oldShop.remove();
+            sidebar.appendChild(shopDiv);
+            
+            showMessage('Welcome to the shop!');
+        }
+
+        // Buy Seed
+        function buySeed(crop, price) {
+            if (gameState.gold >= price) {
+                gameState.gold -= price;
+                gameState.inventory[`seeds_${crop}`]++;
+                gameState.player.happiness += 10;
+                showMessage(`Bought ${CROPS[crop].name} seeds!`);
+                draw();
+            } else {
+                showMessage('Not enough gold!');
+            }
+        }
+
+        // Show Message
+        function showMessage(msg) {
+            document.getElementById('messageBox').textContent = msg;
+        }
+
+        // Save Game
+        function saveGame() {
+            localStorage.setItem('farmGame', JSON.stringify(gameState));
+            showMessage('Game saved!');
+        }
+
+        // Load Game
+        function loadGame() {
+            const saved = localStorage.getItem('farmGame');
+            if (saved) {
+                Object.assign(gameState, JSON.parse(saved));
+                showMessage('Game loaded!');
+            }
+        }
+
+        // Initialize & Start
+        initTiles();
+        loadGame();
+        draw();
+
+        // Tick (update every second)
+        setInterval(() => {
+            gameState.time += 0.5;
+            if (gameState.time >= 22) {
+                nextDay();
+            }
+            gameState.player.happiness = Math.max(0, gameState.player.happiness - 0.05);
+            draw();
+        }, 1000);
+
+        // Harvest (double-click on crop)
+        canvas.addEventListener('dblclick', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+            
+            const tile = getTileAt(x, y);
+            if (tile && tile.crop) {
+                const cropData = CROPS[tile.crop];
+                if (tile.growth >= cropData.growth) {
+                    // Harvest
+                    if (!gameState.harvested[tile.crop]) {
+                        gameState.harvested[tile.crop] = 0;
+                    }
+                    gameState.harvested[tile.crop]++;
+                    gameState.gold += cropData.value;
+                    gameState.player.happiness += 20;
+                    showMessage(`Harvested ${cropData.name}! Gained ${cropData.value}g`);
+                    
+                    tile.crop = null;
+                    tile.growth = 0;
+                    tile.type = 'grass';
+                    draw();
+                } else {
+                    showMessage('Crop not ready yet!');
+                }
+            }
+        });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"305641585f3841538508659aa3d2ee40","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
